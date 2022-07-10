@@ -1,9 +1,11 @@
-use svg::node::element::{SVG, Rectangle, Path, path};
+use svg::{Node, node::{self, element::{SVG, Element, Group, Style, Text, Rectangle, Path, path}}};
 
-pub struct SankeyStyle<F: FnMut(i32) -> String> {
+pub struct SankeyStyle<F: Fn(f64) -> String> {
 	pub number_format: Option<F>,
 	pub node_separation: Option<f64>,
 	pub node_width: Option<f64>,
+	pub font_size: Option<f64>,
+	pub border: Option<f64>,
 }
 
 pub struct Sankey {
@@ -63,16 +65,47 @@ impl Sankey {
 		self.nodes[node.0].flow()
 	}
 	
-	pub fn draw<F: FnMut(i32) -> String>(&self, width: f64, height: f64, style: SankeyStyle<F>) -> SVG {
+	pub fn draw<F: Fn(f64) -> String>(&self, width: f64, height: f64, style: SankeyStyle<F>) -> SVG {
 		let node_separation = style.node_separation.unwrap_or(height / 50.0);
 		let node_width = style.node_width.unwrap_or(width / 100.0);
+		let font_size: f64 = style.font_size.unwrap_or(height / 50.0);
+		let border: f64 = style.border.unwrap_or(height / 10.0);
 		
 		
 		// Initialise SVG
 		
-		let mut document =
-			SVG::new()
-			.set("viewBox", (0.0, 0.0, width, height));
+		let mut document = SVG::new();
+		
+		document.assign("viewBox", (0.0, 0.0, width, height));
+		
+		document.append(Style::new(format!(
+"rect.node {{
+	fill: #000F;
+}}
+
+text.node {{
+	fill: #000F;
+	text-anchor: middle;
+	vertical-align: middle;
+	font-size: {}px;
+}}
+
+.edge > path {{
+	fill: #0004;
+}}
+
+.edge > text {{
+	display: none;
+	fill: #000F;
+	text-anchor: middle;
+	vertical-align: middle;
+	font-size: {}px;
+}}
+
+.edge:hover > text {{
+	display: inline;
+}}",
+			font_size, font_size)));
 		
 		
 		// Pre-process graph
@@ -128,45 +161,78 @@ impl Sankey {
 				}
 			}
 			
-			let scale = (height - node_separation * ((current_layer.len() + 1) as f64)) / total_value;
+			let scale = (height - border * 2.0 - node_separation * ((current_layer.len() - 1) as f64)) / total_value;
 			if scale < min_scale {
 				min_scale = scale;
 			}
 		}
 		
 		
-		// Draw nodes
+		// Generate nodes
+		
+		let mut svg_nodes = Vec::new();
+		let mut svg_node_labels = Vec::new();
 		
 		let mut positions = vec![(0.0, 0.0, 0.0); self.nodes.len()];
 		
-		let layer_width = (width - node_separation * 2.0 - (layers.len() as f64) * node_width) / ((layers.len() - 1) as f64);
+		let layer_width = (width - border * 2.0 - (layers.len() as f64) * node_width) / ((layers.len() - 1) as f64);
 		
-		let mut x = node_separation;
+		let mut x = border;
 		for layer in layers {
-			let mut total_height = node_separation;
+			let mut total_height = -node_separation;
 			for node_id in &layer {
 				total_height += self.nodes[node_id.0].flow() * min_scale + node_separation;
 			}
 			let total_height = total_height;
-			let mut y = node_separation + (height - total_height) / 2.0;
+			let mut y = (height - total_height) / 2.0;
 			for node_id in &layer {
 				let node = &self.nodes[node_id.0];
 				positions[node_id.0] = (x, y, y);
-				document = document.add(
-					Rectangle::new()
-					.set("x", x)
-					.set("y", y)
-					.set("width", node_width)
-					.set("height", node.flow() * min_scale)
-					.set("fill", node.color.as_deref().unwrap_or("#000"))
-				);
+				
+				let mut rect = Rectangle::new();
+				rect.assign("x", x);
+				rect.assign("y", y);
+				rect.assign("width", node_width);
+				rect.assign("height", node.flow() * min_scale);
+				rect.assign("class", "node");
+				if let Some(color) = node.color.as_deref() {
+					rect.assign("style", format!("fill:{}", color));
+				}
+				svg_nodes.push(rect);
+				
+				let mid_x = x + node_width / 2.0;
+				let mid_y = y + node.flow() * min_scale / 2.0;
+				
+				let mut text = Text::new();
+				text.assign("x", mid_x);
+				text.assign("y", mid_y);
+				text.assign("class", "node");
+				let number = style.number_format.as_ref().map_or(node.flow().to_string(), |f| f(node.flow()));
+				if let Some(label) = &node.label {
+					let mut top = Element::new("tspan");
+					top.assign("x", mid_x);
+					top.assign("dy", 0.0);
+					top.append(node::Text::new(label));
+					text.append(top);
+					let mut bottom = Element::new("tspan");
+					bottom.assign("x", mid_x);
+					bottom.assign("dy", font_size);
+					bottom.append(node::Text::new(number));
+					text.append(bottom);
+				} else {
+					text.append(node::Text::new(number));
+				}
+				svg_node_labels.push(text);
+				
 				y += node.flow() * min_scale + node_separation;
 			}
 			x += node_width + layer_width;
 		}
 		
 		
-		// Draw edges
+		// Generate edges
+		
+		let mut svg_edges = Vec::new();
 		
 		for edge in &self.edges {
 			let thickness = edge.value * min_scale;
@@ -177,23 +243,66 @@ impl Sankey {
 			let to_y_start = positions[edge.target.0].1;
 			let to_y_end = to_y_start + thickness;
 			let mid_x = (from_x + to_x) / 2.0;
-			//let mid_y = (from_y_start + to_y_end) / 2.0;
+			let mid_y = (from_y_start + to_y_end) / 2.0;
 			
 			positions[edge.source.0].2 = from_y_end;
 			positions[edge.target.0].1 = to_y_end;
 			
-			document = document.add(
-				Path::new()
-				.set("d",
-					path::Data::new()
-					.move_to((from_x, from_y_start))
-					.cubic_curve_to((mid_x, from_y_start, mid_x, to_y_start, to_x, to_y_start))
-					.line_to((to_x, to_y_end))
-					.cubic_curve_to((mid_x, to_y_end, mid_x, from_y_end, from_x, from_y_end))
-					.close()
-				)
-				.set("fill", edge.color.as_deref().unwrap_or("#0005"))
+			let mut group = Group::new();
+			group.assign("class", "edge");
+			
+			let mut path = Path::new();
+			path.assign("d",
+				path::Data::new()
+				.move_to((from_x, from_y_start))
+				.cubic_curve_to((mid_x, from_y_start, mid_x, to_y_start, to_x, to_y_start))
+				.line_to((to_x, to_y_end))
+				.cubic_curve_to((mid_x, to_y_end, mid_x, from_y_end, from_x, from_y_end))
+				.close()
 			);
+			if let Some(color) = edge.color.as_deref() {
+				path.assign("style", format!("fill:{}", color));
+			}
+			group.append(path);
+			
+			let mut text = Text::new();
+			text.assign("x", mid_x);
+			text.assign("y", mid_y);
+			let number = style.number_format.as_ref().map_or(edge.value.to_string(), |f| f(edge.value));
+			if let Some(label) = &edge.label {
+				let mut top = Element::new("tspan");
+				top.assign("x", 0);
+				top.assign("dy", -font_size);
+				top.append(node::Text::new(label));
+				text.append(top);
+				let mut bottom = Element::new("tspan");
+				bottom.assign("x", 0);
+				bottom.assign("dy", font_size);
+				bottom.append(node::Text::new(number));
+				text.append(bottom);
+			} else {
+				text.append(node::Text::new(number));
+			}
+			group.append(text);
+			
+			svg_edges.push((edge.value, group));
+		}
+		
+		
+		// Add to SVG
+		
+		svg_edges.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+		
+		for node in svg_nodes {
+			document.append(node);
+		}
+		
+		for (_, edge) in svg_edges {
+			document.append(edge);
+		}
+		
+		for label in svg_node_labels {
+			document.append(label);
 		}
 		
 		
