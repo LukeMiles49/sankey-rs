@@ -1,0 +1,15 @@
+[package]
+name = "sankey"
+description = "A Rust library for generating sankey diagrams"
+keywords = ["sankey", "diagram", "svg"]
+categories = ["graphics", "visualization"]
+documentation = "https://docs.rs/sankey_rs"
+homepage = "https://github.com/LukeMiles49/sankey"
+version = "0.1.0"
+authors = ["Luke Miles <luke.49@live.co.uk>"]
+license = "MPL-2.0"
+repository = "https://github.com/LukeMiles49/sankey-rs"
+readme = "README.md"
+edition = "2021"
+
+[dependencies]
