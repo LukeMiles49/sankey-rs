@@ -69,7 +69,7 @@ fn tax() {
 	
 	let svg = sankey.draw(512.0, 512.0, style);
 	
-	svg::save("./target/tax.svg", &svg).unwrap();
+	svg::save("./example.svg", &svg).unwrap();
 }
 
 struct Band {
