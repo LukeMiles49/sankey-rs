@@ -8,7 +8,7 @@
 doc = ::embed_doc_image::embed_image!("example.svg", "./example.svg"),
 )]
 
-#![doc(html_root_url = "https://docs.rs/sankey/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/sankey/0.1.1")]
 
 use svg::{Node, node::{self, element::{SVG, Element, Group, Style, Text, Rectangle, Path, path}}};
 
