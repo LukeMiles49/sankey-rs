@@ -14,3 +14,4 @@ edition = "2021"
 
 [dependencies]
 svg = "^0.10.0"
+embed-doc-image = "^0.1.4"

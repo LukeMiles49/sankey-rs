@@ -1,3 +1,15 @@
+//! A Rust library for generating sankey diagrams.
+//!
+//! ![Example Sankey diagram][example.svg]
+//!
+//! See <https://github.com/LukeMiles49/sankey-rs/blob/main/tests/tax.rs> for an example of how to generate the above Sankey diagram.
+
+#![cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("example.svg", "./example.svg"),
+)]
+
+#![doc(html_root_url = "https://docs.rs/sankey/0.1.0")]
+
 use svg::{Node, node::{self, element::{SVG, Element, Group, Style, Text, Rectangle, Path, path}}};
 
 pub struct SankeyStyle<F: Fn(f64) -> String> {
@@ -360,3 +372,8 @@ pub struct SankeyEdge {
 	label: Option<String>,
 	color: Option<String>,
 }
+
+// Include the readme and changelog as hidden documentation so they're tested by cargo test
+#[doc = include_str!("../README.md")]
+#[doc = include_str!("../CHANGELOG.md")]
+type _Doctest = ();

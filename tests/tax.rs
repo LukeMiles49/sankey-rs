@@ -19,10 +19,16 @@ fn tax() {
 	const SAVING_NODE_COLOR: &str = "#C5EF";
 	const SAVING_EDGE_COLOR: &str = "#C5E5";
 	
+	const EMPLOYER_NODE_COLOR: &str = "#6B7F";
+	const EMPLOYER_EDGE_COLOR: &str = "#6B75";
+	
+	const GOVERNMENT_NODE_COLOR: &str = "#27BF";
+	const GOVERNMENT_EDGE_COLOR: &str = "#27B5";
+	
 	let salary = sankey.node(Some(50000.0), Some("Salary".into()), Some(INCOME_NODE_COLOR.into()));
 	let bonus = sankey.node(Some(5000.0), Some("Bonus".into()), Some(INCOME_NODE_COLOR.into()));
-	let employer = sankey.node(None, Some("Employer".into()), None);
-	let government = sankey.node(None, Some("Government".into()), None);
+	let employer = sankey.node(None, Some("Employer".into()), Some(EMPLOYER_NODE_COLOR.into()));
+	let government = sankey.node(None, Some("Government".into()), Some(GOVERNMENT_NODE_COLOR.into()));
 	
 	let income = sankey.node(None, Some("Income".into()), Some(INCOME_NODE_COLOR.into()));
 	sankey.edge(salary, income, sankey.remaining_output(salary), None, Some(INCOME_EDGE_COLOR.into()));
@@ -30,7 +36,7 @@ fn tax() {
 	
 	let pension = sankey.node(None, Some("Pension".into()), Some(SAVING_NODE_COLOR.into()));
 	sankey.edge(income, pension, sankey.required_output(income) * 0.1, None, Some(SAVING_EDGE_COLOR.into()));
-	sankey.edge(employer, pension, sankey.current_input(pension), None, Some(SAVING_EDGE_COLOR.into()));
+	sankey.edge(employer, pension, sankey.current_input(pension), None, Some(EMPLOYER_EDGE_COLOR.into()));
 	
 	let taxable = sankey.node(None, Some("Taxable".into()), Some(INCOME_NODE_COLOR.into()));
 	sankey.edge(income, taxable, sankey.remaining_output(income), None, Some(INCOME_EDGE_COLOR.into()));
@@ -40,7 +46,7 @@ fn tax() {
 	
 	let national_insurance = sankey.node(Some(apply_tax(sankey.required_output(taxable), &NATIONAL_INSURANCE_BANDS)), Some("National Insurance".into()), Some(TAX_NODE_COLOR.into()));
 	sankey.edge(taxable, national_insurance, apply_tax(sankey.required_output(taxable), &NATIONAL_INSURANCE_CONTRIBUTION_BANDS), None, Some(TAX_EDGE_COLOR.into()));
-	sankey.edge(employer, national_insurance, sankey.remaining_input(national_insurance), None, Some(TAX_EDGE_COLOR.into()));
+	sankey.edge(employer, national_insurance, sankey.remaining_input(national_insurance), None, Some(EMPLOYER_EDGE_COLOR.into()));
 	
 	let student_loan = sankey.node(None, Some("Student Loan".into()), Some(TAX_NODE_COLOR.into()));
 	sankey.edge(taxable, student_loan, apply_tax(sankey.required_output(taxable), &STUDENT_LOAN_BANDS), None, Some(TAX_EDGE_COLOR.into()));
@@ -63,7 +69,7 @@ fn tax() {
 	if sankey.remaining_output(taxable) > 0.0 {
 		let lisa = sankey.node(None, Some("LISA".into()), Some(SAVING_NODE_COLOR.into()));
 		sankey.edge(taxable, lisa, f64::min(sankey.remaining_output(taxable), 4000.0), None, Some(SAVING_EDGE_COLOR.into()));
-		sankey.edge(government, lisa, sankey.current_input(lisa) * 0.25, None, Some(SAVING_EDGE_COLOR.into()));
+		sankey.edge(government, lisa, sankey.current_input(lisa) * 0.25, None, Some(GOVERNMENT_EDGE_COLOR.into()));
 	}
 	
 	if sankey.remaining_output(taxable) > 0.0 {
