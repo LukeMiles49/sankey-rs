@@ -10,8 +10,8 @@ fn tax() {
 	const TAX_NODE_COLOR: &str = "#777F";
 	const TAX_EDGE_COLOR: &str = "#7775";
 	
-	const BILLS_NODE_COLOR: &str = "#ACDF";
-	const BILLS_EDGE_COLOR: &str = "#ACD5";
+	const BILLS_NODE_COLOR: &str = "#974F";
+	const BILLS_EDGE_COLOR: &str = "#9845";
 	
 	const SPENDING_NODE_COLOR: &str = "#EC5F";
 	const SPENDING_EDGE_COLOR: &str = "#EC55";
@@ -83,10 +83,12 @@ fn tax() {
 	}
 	
 	let style = SankeyStyle {
-		number_format: Some(|x| format!("£{:.2}", x)),
+		number_format: Some(|x| format!("£{x:.2}")),
 		node_separation: None,
 		node_width: None,
+		font_family: None,
 		font_size: None,
+		font_color: None,
 		border: None,
 	};
 	

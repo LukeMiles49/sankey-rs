@@ -16,7 +16,9 @@ pub struct SankeyStyle<F: Fn(f64) -> String> {
 	pub number_format: Option<F>,
 	pub node_separation: Option<f64>,
 	pub node_width: Option<f64>,
+	pub font_family: Option<String>,
 	pub font_size: Option<f64>,
+	pub font_color: Option<String>,
 	pub border: Option<f64>,
 }
 
@@ -78,9 +80,11 @@ impl Sankey {
 	}
 	
 	pub fn draw<F: Fn(f64) -> String>(&self, width: f64, height: f64, style: SankeyStyle<F>) -> SVG {
-		let node_separation = style.node_separation.unwrap_or(height / 50.0);
+		let node_separation = style.node_separation.unwrap_or(height / 30.0);
 		let node_width = style.node_width.unwrap_or(width / 100.0);
+		let font_family: String = style.font_family.unwrap_or("sans-serif".to_string());
 		let font_size: f64 = style.font_size.unwrap_or(height / 50.0);
+		let font_color: String = style.font_color.unwrap_or("#000".to_string());
 		let border: f64 = style.border.unwrap_or(height / 10.0);
 		
 		
@@ -95,29 +99,22 @@ impl Sankey {
 	fill: #000F;
 }}
 
-text.node {{
-	fill: #000F;
-	text-anchor: middle;
-	vertical-align: middle;
-	font-size: {}px;
-}}
-
 .edge > path {{
 	fill: #0004;
 }}
 
-.edge > text {{
-	display: none;
-	fill: #000F;
+text.node, .edge > text {{
+	fill: {font_color};
 	text-anchor: middle;
-	vertical-align: middle;
-	font-size: {}px;
+	dominant-baseline: central;
+	font-family: {font_family};
+	font-size: {font_size}px;
 }}
 
-.edge:hover > text {{
-	display: inline;
-}}",
-			font_size, font_size)));
+.edge:not(:hover) > text {{
+	display: none;
+}}"
+		)));
 		
 		
 		// Pre-process graph
@@ -208,7 +205,7 @@ text.node {{
 				rect.assign("height", node.flow() * min_scale);
 				rect.assign("class", "node");
 				if let Some(color) = node.color.as_deref() {
-					rect.assign("style", format!("fill:{}", color));
+					rect.assign("style", format!("fill:{color}"));
 				}
 				svg_nodes.push(rect);
 				
@@ -223,7 +220,7 @@ text.node {{
 				if let Some(label) = &node.label {
 					let mut top = Element::new("tspan");
 					top.assign("x", mid_x);
-					top.assign("dy", 0.0);
+					top.assign("dy", -font_size / 2.0);
 					top.append(node::Text::new(label));
 					text.append(top);
 					let mut bottom = Element::new("tspan");
@@ -273,7 +270,7 @@ text.node {{
 				.close()
 			);
 			if let Some(color) = edge.color.as_deref() {
-				path.assign("style", format!("fill:{}", color));
+				path.assign("style", format!("fill:{color}"));
 			}
 			group.append(path);
 			
