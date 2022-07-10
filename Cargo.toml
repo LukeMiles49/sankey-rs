@@ -13,3 +13,4 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
+svg = "^0.10.0"
