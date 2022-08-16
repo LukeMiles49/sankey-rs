@@ -84,12 +84,7 @@ fn tax() {
 	
 	let style = SankeyStyle {
 		number_format: Some(|x| format!("£{x:.2}")),
-		node_separation: None,
-		node_width: None,
-		font_family: None,
-		font_size: None,
-		font_color: None,
-		border: None,
+		..SankeyStyle::default()
 	};
 	
 	let svg = sankey.draw(512.0, 512.0, style);

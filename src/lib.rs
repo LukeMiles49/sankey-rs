@@ -22,6 +22,20 @@ pub struct SankeyStyle<F: Fn(f64) -> String> {
 	pub border: Option<f64>,
 }
 
+impl<F: Fn(f64) -> String> Default for SankeyStyle<F> {
+	fn default() -> Self {
+		SankeyStyle {
+			number_format: None,
+			node_separation: None,
+			node_width: None,
+			font_family: None,
+			font_size: None,
+			font_color: None,
+			border: None,
+		}
+	}
+}
+
 pub struct Sankey {
 	nodes: Vec<SankeyNode>,
 	edges: Vec<SankeyEdge>,
