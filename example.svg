@@ -4,6 +4,10 @@ rect.node {
 	fill: #000F;
 }
 
+.edge > path {
+	fill: #0004;
+}
+
 text.node, .edge > text {
 	fill: #000;
 	text-anchor: middle;
